@@ -46,48 +46,42 @@ function getForecast( city, callback ) {
 suite.only( "operations" );
 
 function fetchCurrentCity() {
-    let operation = {
-        successReaction: [],
-        errorReaction: []
-    };
+    let operation = new Operation();
 
-    getCurrentCity( function( error, result ) {
-        if ( error ) {
-            operation.errorReaction.forEach( reaction => reaction( error ) );
-            return;
-        }
-
-        operation.successReaction.forEach( reaction => reaction( result ) );
-    } );
-
-    operation.onCompletion = ( onSuccess, onError ) => {
-        const noop = () => {};
-
-        operation.successReaction.push( onSuccess || noop );
-        operation.errorReaction.push( onError );
-    };
-
-    operation.onFailure = onError => {
-        operation.onCompletion( null, onError );
-    };
+    getCurrentCity( operation.nodeCallback );
 
     return operation;
 }
 
 function fetchWeather( city ) {
+    let operation = new Operation();
+
+    getWeather( city, operation.nodeCallback );
+
+    return operation;
+}
+
+function fetchForecast( city ) {
+    let operation = new Operation();
+
+    getForecast( city, operation.nodeCallback );
+
+    return operation;
+}
+
+function Operation() {
     let operation = {
         successReaction: [],
         errorReaction: []
     };
 
-    getWeather( city, function( error, result ) {
-        if ( error ) {
-            operation.errorReaction.forEach( reaction => reaction( error ) );
-            return;
-        }
-
+    operation.succed = ( result ) => {
         operation.successReaction.forEach( reaction => reaction( result ) );
-    } );
+    };
+
+    operation.fail = ( error ) => {
+        operation.errorReaction.forEach( reaction => reaction( error ) );
+    };
 
     operation.onCompletion = ( onSuccess, onError ) => {
         const noop = () => {};
@@ -100,6 +94,15 @@ function fetchWeather( city ) {
         operation.onCompletion( null, onError );
     };
 
+    operation.nodeCallback = ( error, result ) => {
+        if ( error ) {
+            operation.fail( error );
+            return;
+        }
+
+        operation.succed( result );
+    };
+
     return operation;
 }
 
@@ -110,8 +113,15 @@ test( "noop if no success handler passed", done => {
     operation.onCompletion( result => done() );
 } );
 
-test( "noop if no error handler passed", done => {
+test( "noop if no error handler passed for weather", done => {
     let operation = fetchWeather();
+
+    operation.onCompletion( result => done( new Error( "shouldn't succed" ) ) );
+    operation.onFailure( error => done() );
+} );
+
+test( "noop if no error handler passed for forecast", done => {
+    let operation = fetchForecast();
 
     operation.onCompletion( result => done( new Error( "shouldn't succed" ) ) );
     operation.onFailure( error => done() );
