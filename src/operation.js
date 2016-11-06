@@ -42,3 +42,23 @@ function getForecast( city, callback ) {
 
     }, delayms );
 }
+
+suite.only( "operations" );
+
+function fetchCurrentCity( onSuccess, onError ) {
+    getCurrentCity( function( error, result ) {
+        if ( error ) {
+            onError( error );
+            return;
+        }
+
+        onSuccess( result );
+    } );
+}
+
+test( "fetchCurrentCity with separate success and error callback", done => {
+    fetchCurrentCity(
+        result => done(),
+        error  => done( error )
+    );
+} );
