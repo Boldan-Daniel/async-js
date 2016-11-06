@@ -45,19 +45,31 @@ function getForecast( city, callback ) {
 
 suite.only( "operations" );
 
-function fetchCurrentCity( onSuccess, onError ) {
+function fetchCurrentCity() {
+    let operation = {};
+
     getCurrentCity( function( error, result ) {
         if ( error ) {
-            onError( error );
+            operation.onError( error );
             return;
         }
 
-        onSuccess( result );
+        operation.onSuccess( result );
     } );
+
+    operation.setCallbacks = ( onSuccess, onError ) => {
+        operation.onSuccess = onSuccess;
+        operation.onError   = onError;
+    };
+
+    return operation;
 }
 
-test( "fetchCurrentCity with separate success and error callback", done => {
-    fetchCurrentCity(
+
+test( "fetchCurrentCity pass the callback later on", done => {
+    let operation = fetchCurrentCity();
+
+    operation.setCallbacks(
         result => done(),
         error  => done( error )
     );
