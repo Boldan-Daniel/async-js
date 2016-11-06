@@ -60,27 +60,76 @@ function fetchCurrentCity() {
         operation.successReaction.forEach( reaction => reaction( result ) );
     } );
 
-    operation.setCallbacks = ( onSuccess, onError ) => {
-        operation.successReaction.push( onSuccess );
+    operation.onCompletion = ( onSuccess, onError ) => {
+        const noop = () => {};
+
+        operation.successReaction.push( onSuccess || noop );
         operation.errorReaction.push( onError );
+    };
+
+    operation.onFailure = onError => {
+        operation.onCompletion( null, onError );
     };
 
     return operation;
 }
+
+function fetchWeather( city ) {
+    let operation = {
+        successReaction: [],
+        errorReaction: []
+    };
+
+    getWeather( city, function( error, result ) {
+        if ( error ) {
+            operation.errorReaction.forEach( reaction => reaction( error ) );
+            return;
+        }
+
+        operation.successReaction.forEach( reaction => reaction( result ) );
+    } );
+
+    operation.onCompletion = ( onSuccess, onError ) => {
+        const noop = () => {};
+
+        operation.successReaction.push( onSuccess || noop );
+        operation.errorReaction.push( onError || noop );
+    };
+
+    operation.onFailure = onError => {
+        operation.onCompletion( null, onError );
+    };
+
+    return operation;
+}
+
+test( "noop if no success handler passed", done => {
+    let operation = fetchCurrentCity();
+
+    operation.onFailure( error => done( error ) );
+    operation.onCompletion( result => done() );
+} );
+
+test( "noop if no error handler passed", done => {
+    let operation = fetchWeather();
+
+    operation.onCompletion( result => done( new Error( "shouldn't succed" ) ) );
+    operation.onFailure( error => done() );
+} );
 
 test( "pass multiple callbacks - all of them are called", done => {
     let operation = fetchCurrentCity();
 
     const multiDone = callDone( done ).afterTwoCalls();
 
-    operation.setCallbacks( result => multiDone() );
-    operation.setCallbacks( result => multiDone() );
+    operation.onCompletion( result => multiDone() );
+    operation.onCompletion( result => multiDone() );
 } );
 
 test( "fetchCurrentCity pass the callback later on", done => {
     let operation = fetchCurrentCity();
 
-    operation.setCallbacks(
+    operation.onCompletion(
         result => done(),
         error  => done( error )
     );
