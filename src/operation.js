@@ -98,10 +98,12 @@ function Operation() {
             operation.successReaction.push( onSuccess || noop );
             operation.errorReaction.push( onError || noop );
         }
+
+        return new Operation();
     };
 
     operation.onFailure = onError => {
-        operation.onCompletion( null, onError );
+        return operation.onCompletion( null, onError );
     };
 
     operation.nodeCallback = ( error, result ) => {
@@ -125,9 +127,7 @@ function doLater( func ) {
 }
 
 test ( "life is full of async, nesting is inevitable, let's do something about it", done => {
-    let weatherOp = new Operation();
-
-    fetchCurrentCity().onCompletion( city => {
+    let weatherOp = fetchCurrentCity().onCompletion( city => {
         fetchWeather( city ).forwardCompletion( weatherOp );
     } );
 
