@@ -113,6 +113,10 @@ function Operation() {
         operation.succed( result );
     };
 
+    operation.forwardCompletion = ( op => {
+        operation.onCompletion( op.succed, op.fail );
+    } );
+
     return operation;
 }
 
@@ -124,10 +128,7 @@ test ( "life is full of async, nesting is inevitable, let's do something about i
     let weatherOp = new Operation();
 
     fetchCurrentCity().onCompletion( city => {
-        fetchWeather( city ).onCompletion( weather => {
-            weatherOp.succed( weather );
-            console.log( weather );
-        } );
+        fetchWeather( city ).forwardCompletion( weatherOp );
     } );
 
     weatherOp.onCompletion( weather => done() );
