@@ -76,18 +76,28 @@ function Operation() {
     };
 
     operation.succed = ( result ) => {
+        operation.state = "succeded";
         operation.successReaction.forEach( reaction => reaction( result ) );
+        operation.result = result;
     };
 
     operation.fail = ( error ) => {
+        operation.state = "failed";
         operation.errorReaction.forEach( reaction => reaction( error ) );
+        operation.error = error;
     };
 
     operation.onCompletion = ( onSuccess, onError ) => {
         const noop = () => {};
 
-        operation.successReaction.push( onSuccess || noop );
-        operation.errorReaction.push( onError || noop );
+        if ( operation.state === "succeded" ) {
+            onSuccess( operation.result );
+        } else if ( operation.state === "failed" ) {
+            onError( operation.error );
+        } else {
+            operation.successReaction.push( onSuccess || noop );
+            operation.errorReaction.push( onError || noop );
+        }
     };
 
     operation.onFailure = onError => {
@@ -105,6 +115,26 @@ function Operation() {
 
     return operation;
 }
+
+function doLater( func ) {
+    setTimeout( func, 1 );
+}
+
+test( "register error calback async", done => {
+    var operationThatErrors = fetchWeather();
+
+    doLater( function() {
+        operationThatErrors.onFailure( () => done() );
+    } );
+} );
+
+test( "register success calback async", done => {
+    var operationThatSucceds = fetchCurrentCity();
+
+    doLater( function() {
+        operationThatSucceds.onCompletion( city => done() );
+    } );
+} );
 
 test( "noop if no success handler passed", done => {
     let operation = fetchCurrentCity();
