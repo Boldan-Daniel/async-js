@@ -120,6 +120,19 @@ function doLater( func ) {
     setTimeout( func, 1 );
 }
 
+test ( "life is full of async, nesting is inevitable, let's do something about it", done => {
+    let weatherOp = new Operation();
+
+    fetchCurrentCity().onCompletion( city => {
+        fetchWeather( city ).onCompletion( weather => {
+            weatherOp.succed( weather );
+            console.log( weather );
+        } );
+    } );
+
+    weatherOp.onCompletion( weather => done() );
+} );
+
 test( "lexical parallelism", done => {
     const city = "Cluj";
     const weatherOp = fetchWeather( city );
