@@ -120,6 +120,19 @@ function doLater( func ) {
     setTimeout( func, 1 );
 }
 
+test( "lexical parallelism", done => {
+    const city = "Cluj";
+    const weatherOp = fetchWeather( city );
+    const forecastOp = fetchForecast( city );
+
+    weatherOp.onCompletion( weather => {
+        forecastOp.onCompletion( forecast => {
+            console.log( `It's currently ${weather.temp} in ${city} with a five day forecast of ${forecast.fiveDay}` );
+            done();
+        } );
+    } );
+} );
+
 test( "register error calback async", done => {
     var operationThatErrors = fetchWeather();
 
